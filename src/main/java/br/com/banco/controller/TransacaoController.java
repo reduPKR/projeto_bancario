@@ -2,6 +2,8 @@ package br.com.banco.controller;
 
 import br.com.banco.dto.movimentacao.TransacaoDepositoRequest;
 import br.com.banco.dto.movimentacao.TransacaoDepositoResponse;
+import br.com.banco.dto.movimentacao.TransacaoTransferenciaResponse;
+import br.com.banco.dto.movimentacao.TransacaoTransferirRequest;
 import br.com.banco.enums.TipoMovimentacao;
 import br.com.banco.model.ContaModel;
 import br.com.banco.model.MovimentacaoModel;
@@ -48,12 +50,60 @@ public class TransacaoController {
             movimentacaoService.save(movimentacaoModel);
 
             if (movimentacaoModel.getId() != 0){
-                contaModel.setSaldo(movimentacaoModel.getValor());
+                contaModel.depositar(movimentacaoModel.getValor());
                 contaModel.addMovimentacao(movimentacaoModel);
                 contaService.save(contaModel);
 
                 TransacaoDepositoResponse response = new TransacaoDepositoResponse(contaModel, movimentacaoModel);
-                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            }
+        }
+        return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @PostMapping("/pagamento")
+    public ResponseEntity<TransacaoTransferenciaResponse> transferir(@Validated @RequestBody TransacaoTransferirRequest request){
+        ContaModel contaOrigemModel = contaService.findById(request.getConta_origem_id());
+        ContaModel contaDestinoModel = contaService.findById(request.getConta_destino_id());
+
+        if (contaOrigemModel != null && contaDestinoModel != null){
+            MovimentacaoModel movimentacaoOrigem =
+                    MovimentacaoModel
+                            .builder()
+                            .valor(request.getValor())
+                            .tipo(TipoMovimentacao.SAIDA)
+                            .data(LocalDate.now())
+                            .conta(contaOrigemModel)
+                            .build();
+
+            MovimentacaoModel movimentacaoDestino =
+                    MovimentacaoModel
+                            .builder()
+                            .valor(request.getValor())
+                            .tipo(TipoMovimentacao.ENTRADA)
+                            .data(LocalDate.now())
+                            .conta(contaDestinoModel)
+                            .build();
+
+            movimentacaoService.save(movimentacaoOrigem);
+            movimentacaoService.save(movimentacaoDestino);
+
+            if (movimentacaoOrigem.getId() != 0 && movimentacaoDestino.getId() != 0){
+                contaOrigemModel.sangria(movimentacaoOrigem.getValor());
+                contaOrigemModel.addMovimentacao(movimentacaoOrigem);
+
+                contaDestinoModel.depositar(movimentacaoDestino.getValor());
+                contaDestinoModel.addMovimentacao(movimentacaoDestino);
+
+                contaService.save(contaOrigemModel);
+                contaService.save(contaDestinoModel);
+
+                TransacaoTransferenciaResponse response = new TransacaoTransferenciaResponse(
+                        contaOrigemModel,
+                        contaDestinoModel,
+                        movimentacaoOrigem
+                );
+                return new ResponseEntity<>(response, HttpStatus.OK);
             }
         }
         return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);

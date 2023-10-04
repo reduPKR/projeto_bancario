@@ -2,16 +2,14 @@ package br.com.banco.model;
 
 import br.com.banco.enums.TipoConta;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
 @Entity
 @Table(name = "conta")
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -40,19 +38,19 @@ public class ContaModel {
     @OneToMany(mappedBy = "conta", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<MovimentacaoModel> movimentacoes;
 
-    public void setUsuario(UsuarioModel usuarioModel) {
-        this.usuario = usuarioModel;
-    }
-
-    public void setSaldo(double valor) {
-        this.saldo = saldo + valor;
-    }
-
     public void addMovimentacao(MovimentacaoModel movimentacaoModel){
         this.movimentacoes.add(movimentacaoModel);
     }
 
     public String getUsuarioNome() {
         return this.usuario.getNome();
+    }
+
+    public void depositar(double valor) {
+        this.saldo = saldo + valor;
+    }
+
+    public void sangria(double valor) {
+        this.saldo = saldo - valor;
     }
 }

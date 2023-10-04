@@ -19,7 +19,7 @@ import java.time.LocalDate;
 @Setter
 public class TransacaoDepositoResponse {
     private Long id;
-    private String usuario;
+    private UsuarioTransacaoResponse usuario;
     private String numero;
     private double saldo;
     private double valor;
@@ -27,12 +27,16 @@ public class TransacaoDepositoResponse {
     private TipoMovimentacao tipo;
 
     public TransacaoDepositoResponse(ContaModel contaModel, MovimentacaoModel movimentacaoModel) {
-        this.id = contaModel.getId();
-        this.usuario = contaModel.getUsuarioNome();
-        this.numero = contaModel.getNumero();
-        this.saldo = contaModel.getSaldo();
+        this.id = movimentacaoModel.getId();
         this.valor = movimentacaoModel.getValor();
         this.data = movimentacaoModel.getData();
         this.tipo = movimentacaoModel.getTipo();
+
+        this.usuario = UsuarioTransacaoResponse
+                .builder()
+                .usuario(contaModel.getUsuarioNome())
+                .numero(contaModel.getNumero())
+                .saldo(contaModel.getSaldo())
+                .build();
     }
 }
